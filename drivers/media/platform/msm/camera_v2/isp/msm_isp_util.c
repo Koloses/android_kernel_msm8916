@@ -63,13 +63,6 @@ static struct msm_bus_scale_pdata bus_client_pdata = {
 static u32 bus_client;
 #endif
 
-static bool camera_boost_flag = true;
-int32_t msm_isp_camera_boost(bool flag){
-	camera_boost_flag = flag;
-	return 0;
-}
-EXPORT_SYMBOL(msm_isp_camera_boost);
-
 static struct msm_bus_vectors msm_isp_init_vectors[] = {
 	{
 		.src = MSM_BUS_MASTER_VFE,
@@ -172,7 +165,7 @@ int msm_isp_init_bandwidth_mgr(enum msm_isp_hw_client client)
 	   isp_bandwidth_mgr.bus_vector_active_idx);
 
 #ifdef CAMERA_BOOST
-	if (!bus_client && camera_boost_flag) {
+	if (!bus_client) {
 		bus_client = msm_bus_scale_register_client(&bus_client_pdata);
 		msm_bus_scale_client_update_request(bus_client, 1);
 	}
@@ -243,11 +236,9 @@ void msm_isp_deinit_bandwidth_mgr(enum msm_isp_hw_client client)
 	msm_bus_scale_unregister_client(isp_bandwidth_mgr.bus_client);
 
 #ifdef CAMERA_BOOST
-	if(bus_client){
-		msm_bus_scale_client_update_request(bus_client, 0);
-		msm_bus_scale_unregister_client(bus_client);
-		bus_client = 0;
-	}
+	msm_bus_scale_client_update_request(bus_client, 0);
+	msm_bus_scale_unregister_client(bus_client);
+	bus_client = 0;
 #endif
 
 	isp_bandwidth_mgr.bus_client = 0;
@@ -383,14 +374,14 @@ static int msm_isp_get_max_clk_rate(struct vfe_device *vfe_dev, long *rate)
 	long          round_rate = 0;
 
 	if (!vfe_dev || !rate) {
-		pr_err("%s:%d failed: vfe_dev %pK rate %pK\n", __func__, __LINE__,
+		pr_err("%s:%d failed: vfe_dev %p rate %p\n", __func__, __LINE__,
 			vfe_dev, rate);
 		return -EINVAL;
 	}
 
 	*rate = 0;
 	if (!vfe_dev->hw_info) {
-		pr_err("%s:%d failed: vfe_dev->hw_info %pK\n", __func__,
+		pr_err("%s:%d failed: vfe_dev->hw_info %p\n", __func__,
 			__LINE__, vfe_dev->hw_info);
 		return -EINVAL;
 	}
@@ -651,13 +642,13 @@ static int msm_isp_send_hw_cmd(struct vfe_device *vfe_dev,
 	uint32_t *cfg_data, uint32_t cmd_len)
 {
 	if (!vfe_dev || !reg_cfg_cmd) {
-		pr_err("%s:%d failed: vfe_dev %pK reg_cfg_cmd %pK\n", __func__,
+		pr_err("%s:%d failed: vfe_dev %p reg_cfg_cmd %p\n", __func__,
 			__LINE__, vfe_dev, reg_cfg_cmd);
 		return -EINVAL;
 	}
 	if ((reg_cfg_cmd->cmd_type != VFE_CFG_MASK) &&
 		(!cfg_data || !cmd_len)) {
-		pr_err("%s:%d failed: cmd type %d cfg_data %pK cmd_len %d\n",
+		pr_err("%s:%d failed: cmd type %d cfg_data %p cmd_len %d\n",
 			__func__, __LINE__, reg_cfg_cmd->cmd_type, cfg_data,
 			cmd_len);
 		return -EINVAL;
@@ -1242,7 +1233,7 @@ int msm_isp_get_bit_per_pixel(uint32_t output_format)
 		/*TD: Add more image format*/
 	default:
 		msm_isp_print_fourcc_error(__func__, output_format);
-#if defined(CONFIG_SENSOR_8_BPP)
+#if defined(CONFIG_SR200PC20)
 		return 8;
 #else
 		return -EINVAL;

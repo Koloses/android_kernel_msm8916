@@ -42,8 +42,6 @@
 
 #define CSID_NUM_CLK_MAX  16
 
-extern int32_t msm_isp_camera_boost(bool flag);
-
 #undef CDBG
 #ifdef CONFIG_MSMB_CAMERA_DEBUG
 #define CDBG(fmt, args...) pr_err(fmt, ##args)
@@ -145,7 +143,7 @@ static int msm_csid_config(struct csid_device *csid_dev,
 	void __iomem *csidbase;
 	csidbase = csid_dev->base;
 	if (!csidbase || !csid_params) {
-		pr_err("%s:%d csidbase %pK, csid params %pK\n", __func__,
+		pr_err("%s:%d csidbase %p, csid params %p\n", __func__,
 			__LINE__, csidbase, csid_params);
 		return -EINVAL;
 	}
@@ -432,7 +430,7 @@ static int32_t msm_csid_cmd(struct csid_device *csid_dev, void *arg)
 	struct csid_cfg_data *cdata = (struct csid_cfg_data *)arg;
 
 	if (!csid_dev || !cdata) {
-		pr_err("%s:%d csid_dev %pK, cdata %pK\n", __func__, __LINE__,
+		pr_err("%s:%d csid_dev %p, cdata %p\n", __func__, __LINE__,
 			csid_dev, cdata);
 		return -EINVAL;
 	}
@@ -440,7 +438,6 @@ static int32_t msm_csid_cmd(struct csid_device *csid_dev, void *arg)
 	switch (cdata->cfgtype) {
 	case CSID_INIT:
 		rc = msm_csid_init(csid_dev, &cdata->cfg.csid_version);
-		msm_isp_camera_boost(true);
 		CDBG("%s csid version 0x%x\n", __func__,
 			cdata->cfg.csid_version);
 		break;
@@ -491,9 +488,6 @@ static int32_t msm_csid_cmd(struct csid_device *csid_dev, void *arg)
 	}
 	case CSID_RELEASE:
 		rc = msm_csid_release(csid_dev);
-		break;
-	case CSID_BOOSTOFF:
-		msm_isp_camera_boost(false);
 		break;
 	default:
 		pr_err("%s: %d failed\n", __func__, __LINE__);
